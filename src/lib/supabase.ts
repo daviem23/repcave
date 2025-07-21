@@ -146,6 +146,20 @@ export const mockWorkouts = [
     exercises: [
       { id: '5', name: 'Burpees', sets: 3, reps: 8, equipment: 'bodyweight', description: 'Full burpees' },
       { id: '6', name: 'Mountain Climbers', sets: 3, duration: 30, equipment: 'bodyweight', description: '30 seconds each set' },
+      { id: '7', name: 'Plank', sets: 3, duration: 45, equipment: 'bodyweight', description: 'Hold plank position' },
+    ],
+  },
+  // Add more workouts for testing
+  {
+    id: '5',
+    day: 5,
+    week: 1,
+    title: 'Core & Cardio',
+    duration: 25,
+    completed: false,
+    exercises: [
+      { id: '8', name: 'Bicycle Crunches', sets: 3, reps: 20, equipment: 'bodyweight', description: 'Alternating bicycle crunches' },
+      { id: '9', name: 'Jumping Jacks', sets: 3, duration: 30, equipment: 'bodyweight', description: '30 seconds of jumping jacks' },
     ],
   },
 ];

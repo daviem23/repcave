@@ -49,9 +49,16 @@ const Workout: React.FC = () => {
     setCompletedSets(prev => new Set([...prev, setKey]));
 
     if (isLastSet && isLastExercise) {
-      // Stop all timers and navigate immediately for final set
+      // Complete the workout and navigate to completion page
       timer.completeWorkout();
-      navigate('/workout-complete', { state: { workoutId: workout.id } });
+      navigate('/workout-complete', { 
+        state: { 
+          workoutId: workout.id,
+          workoutTitle: workout.title,
+          totalExercises: workout.exercises.length,
+          totalSets: workout.exercises.reduce((acc, ex) => acc + ex.sets, 0)
+        } 
+      });
     } else {
       timer.startRest();
     }

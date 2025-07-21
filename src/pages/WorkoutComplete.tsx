@@ -7,7 +7,14 @@ const WorkoutComplete: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [rpe, setRpe] = useState(7);
-  const workoutId = location.state?.workoutId;
+  
+  // Extract workout data from navigation state
+  const { 
+    workoutId, 
+    workoutTitle = 'Your Workout',
+    totalExercises = 0,
+    totalSets = 0 
+  } = location.state || {};
 
   // Play celebration sound on component mount
   React.useEffect(() => {
@@ -19,7 +26,21 @@ const WorkoutComplete: React.FC = () => {
 
   const handleSubmit = () => {
     // Save workout completion with RPE
-    console.log('Workout completed:', { workoutId, rpe });
+    console.log('Workout completed:', { 
+      workoutId, 
+      rpe, 
+      completedAt: new Date().toISOString(),
+      totalExercises,
+      totalSets 
+    });
+    
+    // TODO: Save to Supabase when connected
+    // await supabase.from('workouts').update({
+    //   is_completed: true,
+    //   completed_at: new Date().toISOString(),
+    //   rpe_rating: rpe
+    // }).eq('id', workoutId);
+    
     navigate('/');
   };
 
@@ -34,8 +55,13 @@ const WorkoutComplete: React.FC = () => {
             Workout Complete! 🎉
           </h1>
           <p className="text-text-light">
-            Great job crushing today's workout!
+            Great job crushing {workoutTitle}!
           </p>
+          {totalExercises > 0 && (
+            <p className="text-sm text-text-light mt-2">
+              {totalExercises} exercises • {totalSets} total sets
+            </p>
+          )}
         </div>
 
         {/* RPE Rating */}

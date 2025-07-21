@@ -110,7 +110,7 @@ export const useWorkoutTimer = ({ config, onStateChange, onTimerComplete }: UseW
     setIsActive(false);
     setTimeRemaining(0);
     setState('complete');
-    // Play completion sound without triggering onTimerComplete callback
+    // Play completion sound
     playSound('complete');
   }, [changeState, onTimerComplete]);
 
