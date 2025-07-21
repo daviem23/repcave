@@ -12,6 +12,7 @@ const Onboarding: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     pushupLevel: '',
+    squatLevel: '',
     effortLevel: '',
     equipment: [] as string[],
     workoutDuration: '',
@@ -24,13 +25,19 @@ const Onboarding: React.FC = () => {
       key: 'name',
     },
     {
-      title: 'How many pushups can you do?',
+      title: 'How many push-ups can you do?',
       type: 'single',
       key: 'pushupLevel',
       options: ['0–5', '6–15', '16–30', '31+'],
     },
     {
-      title: 'How do you feel after those pushups?',
+      title: 'How many squats can you do?',
+      type: 'single',
+      key: 'squatLevel',
+      options: ['0–5', '6–15', '16–30', '31+'],
+    },
+    {
+      title: 'How do you feel after ten push-ups and ten squats?',
       type: 'single',
       key: 'effortLevel',
       options: [
