@@ -6,10 +6,16 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
+import { useUserStats, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { mockStats } from '../lib/supabase';
 
 const Progress: React.FC = () => {
   const navigate = useNavigate();
+  const { isConnected } = useDatabaseWithFallback();
+  const { stats: dbStats, loading } = useUserStats();
+  
+  // Choose data source based on connection status
+  const stats = isConnected ? dbStats : mockStats;
 
   const rpeData = [
     { day: 'Mon', rpe: 6 },
@@ -34,6 +40,10 @@ const Progress: React.FC = () => {
     'Deadlift: 275 lbs'
   ];
 
+  if (loading) {
+    return <div className="p-4 text-center">Loading...</div>;
+  }
+
   return (
     <div>
       <Header title="Your Progress" />
@@ -43,7 +53,7 @@ const Progress: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <StatCard
             title="Workout Streak"
-            value={mockStats.workoutStreak}
+            value={stats?.workoutStreak || 0}
             subtitle="current streak"
             icon={Flame}
             color="primary"
@@ -51,7 +61,7 @@ const Progress: React.FC = () => {
           />
           <StatCard
             title="Habit Streak"
-            value={mockStats.habitStreak}
+            value={stats?.habitStreak || 0}
             subtitle="days consistent"
             icon={Target}
             color="success"
@@ -62,13 +72,13 @@ const Progress: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <StatCard
             title="Avg. RPE"
-            value={mockStats.averageRPE.toFixed(1)}
+            value={(stats?.averageRPE || 0).toFixed(1)}
             subtitle="this week"
             icon={Activity}
           />
           <StatCard
             title="Total Volume"
-            value={`${mockStats.totalVolume}`}
+            value={`${stats?.totalVolume || 0}`}
             subtitle="reps completed"
             icon={TrendingUp}
           />

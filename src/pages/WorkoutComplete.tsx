@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Trophy, Star, Home } from 'lucide-react';
 import { useWorkoutTimer } from '../hooks/useWorkoutTimer';
+import { useWorkouts, useDatabaseWithFallback } from '../hooks/useDatabase';
 
 const WorkoutComplete: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isConnected } = useDatabaseWithFallback();
+  const { completeWorkout } = useWorkouts();
   const [rpe, setRpe] = useState(7);
+  const [submitting, setSubmitting] = useState(false);
   
   // Extract workout data from navigation state
   const { 
@@ -24,22 +28,28 @@ const WorkoutComplete: React.FC = () => {
     timer.completeWorkout();
   }, []);
 
-  const handleSubmit = () => {
-    // Save workout completion with RPE
-    console.log('Workout completed:', { 
-      workoutId, 
-      rpe, 
-      completedAt: new Date().toISOString(),
-      totalExercises,
-      totalSets 
-    });
-    
-    // TODO: Save to Supabase when connected
-    // await supabase.from('workouts').update({
-    //   is_completed: true,
-    //   completed_at: new Date().toISOString(),
-    //   rpe_rating: rpe
-    // }).eq('id', workoutId);
+  const handleSubmit = async () => {
+    try {
+      setSubmitting(true);
+      
+      if (isConnected && workoutId) {
+        // Save to database
+        await completeWorkout(workoutId, rpe);
+      } else {
+        // Log for development
+        console.log('Workout completed:', { 
+          workoutId, 
+          rpe, 
+          completedAt: new Date().toISOString(),
+          totalExercises,
+          totalSets 
+        });
+      }
+    } catch (error) {
+      console.error('Error saving workout completion:', error);
+    } finally {
+      setSubmitting(false);
+    }
     
     navigate('/');
   };
@@ -117,9 +127,10 @@ const WorkoutComplete: React.FC = () => {
         <div className="space-y-3">
           <button
             onClick={handleSubmit}
-            className="w-full bg-primary text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-dark transition-colors"
+            disabled={submitting}
+            className="w-full bg-primary text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
-            Complete Workout
+            {submitting ? 'Saving...' : 'Complete Workout'}
           </button>
           
           <button

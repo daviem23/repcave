@@ -3,37 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Edit2, Plus, Trash2, CreditCard, Settings, LogOut, User, Target } from 'lucide-react';
+import { useHabits, useUser, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { mockUser, mockHabits, Habit } from '../lib/supabase';
-
-// --- Mock Store Adapter ---
-const useAppStore = () => {
-  const [habits, setHabits] = useLocalStorage<Habit[]>('habits', mockHabits);
-  const [user, setUser] = useState(mockUser);
-
-  const addHabit = (newHabitData: Omit<Habit, 'id' | 'createdAt'>) => {
-    const newHabit: Habit = {
-      ...newHabitData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-    setHabits(prev => [...prev, newHabit]);
-  };
-
-  const deleteHabit = (habitId: string) => {
-    setHabits(prev => prev.filter(habit => habit.id !== habitId));
-  };
-  
-  const updateHabit = (habit: Habit) => console.log('Update habit (not implemented):', habit);
-  const updateUser = (user: any) => console.log('Update user (not implemented):', user);
-
-  return { user, habits, addHabit, updateHabit, deleteHabit, updateUser };
-};
-// --- End of Mock Store Adapter ---
+import { mockUser, mockHabits, type Habit } from '../lib/supabase';
 
 const Profile: React.FC = () => {
   const location = useLocation();
-  const { user, habits, addHabit, deleteHabit } = useAppStore();
+  const { isConnected } = useDatabaseWithFallback();
+  
+  // Use real data if connected, fallback to localStorage
+  const { user: dbUser, loading: userLoading } = useUser();
+  const { habits: dbHabits, addHabit: dbAddHabit, deleteHabit: dbDeleteHabit, loading: habitsLoading } = useHabits();
+  const [localHabits, setLocalHabits] = useLocalStorage<Habit[]>('habits', mockHabits);
+  
+  // Choose data source based on connection status
+  const user = isConnected ? dbUser : mockUser;
+  const habits = isConnected ? dbHabits : localHabits;
+  const loading = isConnected ? (userLoading || habitsLoading) : false;
   
   const [activeTab, setActiveTab] = useState('profile');
   const [newHabitName, setNewHabitName] = useState('');
@@ -49,13 +35,26 @@ const Profile: React.FC = () => {
 
   const handleAddHabit = () => {
     if (newHabitName.trim()) {
-      addHabit({
-        name: newHabitName.trim(),
-        category: newHabitCategory,
-        completed: false,
-        streak: 0,
-        completionRate: 0
-      });
+      if (isConnected) {
+        dbAddHabit({
+          name: newHabitName.trim(),
+          category: newHabitCategory,
+          completed: false,
+          streak: 0,
+          completionRate: 0
+        });
+      } else {
+        const newHabit: Habit = {
+          id: Date.now().toString(),
+          name: newHabitName.trim(),
+          category: newHabitCategory,
+          completed: false,
+          streak: 0,
+          completionRate: 0,
+          createdAt: new Date().toISOString(),
+        };
+        setLocalHabits(prev => [...prev, newHabit]);
+      }
       setNewHabitName('');
       setNewHabitCategory('Health');
     }
@@ -67,6 +66,14 @@ const Profile: React.FC = () => {
     { id: 'subscription', label: 'Subscription', icon: CreditCard },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
+
+  const handleDeleteHabit = (habitId: string) => {
+    if (isConnected) {
+      dbDeleteHabit(habitId);
+    } else {
+      setLocalHabits(prev => prev.filter(habit => habit.id !== habitId));
+    }
+  };
 
   const renderProfile = () => (
     <div className="space-y-6">
@@ -189,7 +196,7 @@ const Profile: React.FC = () => {
                   <Edit2 size={16} />
                 </button>
                 <button 
-                  onClick={() => deleteHabit(habit.id)}
+                  onClick={() => handleDeleteHabit(habit.id)}
                   className="text-light-text hover:text-red-500"
                 >
                   <Trash2 size={16} />
@@ -310,6 +317,10 @@ const Profile: React.FC = () => {
       default: return renderProfile();
     }
   };
+
+  if (loading) {
+    return <div className="p-4 text-center">Loading...</div>;
+  }
 
   return (
     <div className="p-4 space-y-6">

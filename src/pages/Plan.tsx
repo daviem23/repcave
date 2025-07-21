@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
+import { useWorkouts, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { mockWorkouts } from '../lib/supabase';
 
-// CORRECTED IMPORT PATH: This now correctly points to the components folder.
-// The path '../components/WorkoutCard' assumes PlanTabs.tsx is in a folder like 'src/pages/'.
 import WorkoutCard from '../components/WorkoutCard'; 
 
 const PlanTabs = () => {
   const [selectedWeek, setSelectedWeek] = useState(1);
   const navigate = useNavigate();
+  const { isConnected } = useDatabaseWithFallback();
+  const { workouts: dbWorkouts, loading } = useWorkouts();
+  
+  // Choose data source based on connection status
+  const allWorkouts = isConnected ? dbWorkouts : mockWorkouts;
   const currentDay = 4;
 
-  const workoutsForWeek = mockWorkouts.filter(
+  const workoutsForWeek = allWorkouts.filter(
     (workout) => workout.week === selectedWeek
   );
 
@@ -23,6 +27,10 @@ const PlanTabs = () => {
   const handleRegeneratePlan = () => {
     navigate('/onboarding?regenerate=true');
   };
+
+  if (loading) {
+    return <div className="p-4 text-center">Loading workouts...</div>;
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6">

@@ -4,12 +4,19 @@ import { CheckCircle, ArrowRight } from 'lucide-react';
 import Header from '../components/Header';
 import WorkoutTimer from '../components/WorkoutTimer';
 import { useWorkoutTimer } from '../hooks/useWorkoutTimer';
+import { useWorkouts, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { mockWorkouts } from '../lib/supabase';
 
 const Workout: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [workout] = useState(mockWorkouts.find(w => w.id === id));
+  const { isConnected } = useDatabaseWithFallback();
+  const { workouts: dbWorkouts, completeWorkout: dbCompleteWorkout, loading } = useWorkouts();
+  
+  // Choose data source based on connection status
+  const allWorkouts = isConnected ? dbWorkouts : mockWorkouts;
+  const [workout] = useState(allWorkouts.find(w => w.id === id));
+  
   const [currentExercise, setCurrentExercise] = useState(0);
   const [currentSet, setCurrentSet] = useState(1);
   const [completedSets, setCompletedSets] = useState<Set<string>>(new Set());
@@ -35,11 +42,18 @@ const Workout: React.FC = () => {
     },
   });
 
+  if (loading) {
+    return <div className="p-4 text-center">Loading workout...</div>;
+  }
+
   if (!workout) {
     return <div>Workout not found</div>;
   }
 
-  const handleStartWorkout = () => {
+  const handleStartWorkout = async () => {
+    // TODO: Start workout log when connected to database
+    // if (isConnected) await startWorkoutLog(userId, workout.id);
+    
     setWorkoutStarted(true);
     timer.startTimer();
   };
@@ -49,8 +63,16 @@ const Workout: React.FC = () => {
     setCompletedSets(prev => new Set([...prev, setKey]));
 
     if (isLastSet && isLastExercise) {
-      // Complete the workout and navigate to completion page
+      // Complete the workout
       timer.completeWorkout();
+      
+      // Update database if connected
+      if (isConnected) {
+        // RPE will be collected on the completion page
+        await dbCompleteWorkout(workout.id);
+      }
+      
+      // Navigate to completion page
       navigate('/workout-complete', { 
         state: { 
           workoutId: workout.id,

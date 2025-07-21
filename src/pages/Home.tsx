@@ -5,29 +5,41 @@ import { useNavigate } from 'react-router-dom'; // ADDED: For navigation
 import { Flame, Trophy, Target, MessageCircle, ChevronRight } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import HabitTracker from '../components/HabitTracker';
-import { mockUser, mockHabits, mockStats } from '../lib/supabase';
+import { useHabits, useUserStats, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { mockUser, mockHabits, mockStats } from '../lib/supabase';
 
 const Home: React.FC = () => {
   const navigate = useNavigate(); // ADDED: Initialize navigate function
+  const { isConnected } = useDatabaseWithFallback();
+  
+  // Use real data if connected, fallback to localStorage
+  const { habits: dbHabits, toggleHabit: dbToggleHabit, loading: habitsLoading } = useHabits();
+  const { stats: dbStats, loading: statsLoading } = useUserStats();
+  const [localHabits, setLocalHabits] = useLocalStorage('habits', mockHabits);
 
-  const [habits, setHabits] = useLocalStorage('habits', mockHabits);
+  // Choose data source based on connection status
+  const habits = isConnected ? dbHabits : localHabits;
+  const stats = isConnected ? dbStats : mockStats;
+  const loading = isConnected ? (habitsLoading || statsLoading) : false;
+  
   const [currentTip] = useState(
     "Progressive overload is key! Gradually increase intensity, volume, or difficulty to keep challenging your muscles."
   );
 
   const handleToggleHabit = (habitId: string) => {
-    setHabits(prev => 
-      prev.map(habit => 
-        habit.id === habitId 
-          ? { ...habit, completed: !habit.completed, streak: !habit.completed ? habit.streak + 1 : Math.max(0, habit.streak - 1) }
-          : habit
-      )
-    );
+    if (isConnected) {
+      dbToggleHabit(habitId);
+    } else {
+      setLocalHabits(prev => 
+        prev.map(habit => 
+          habit.id === habitId 
+            ? { ...habit, completed: !habit.completed, streak: !habit.completed ? habit.streak + 1 : Math.max(0, habit.streak - 1) }
+            : habit
+        )
+      );
+    }
   };
-
-  // REMOVED: The old handleAddHabit function is no longer needed.
-  // The functionality is now handled by navigating to the profile page.
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -37,6 +49,10 @@ const Home: React.FC = () => {
   };
 
   const completedHabits = habits.filter(habit => habit.completed).length;
+
+  if (loading) {
+    return <div className="p-4 text-center">Loading...</div>;
+  }
 
   return (
     <div className="p-4 space-y-6">
@@ -54,7 +70,7 @@ const Home: React.FC = () => {
       <div className="grid grid-cols-2 gap-4">
         <StatCard
           title="Workout Streak"
-          value={mockStats.workoutStreak}
+          value={stats?.workoutStreak || 0}
           subtitle="days in a row"
           icon={Flame}
           color="primary"
@@ -62,8 +78,8 @@ const Home: React.FC = () => {
         />
         <StatCard
           title="Plan Progress"
-          value={`${Math.round((mockStats.completedWorkouts / mockStats.totalWorkouts) * 100)}%`}
-          subtitle={`${mockStats.completedWorkouts}/${mockStats.totalWorkouts} workouts`}
+          value={`${Math.round(((stats?.completedWorkouts || 0) / Math.max(stats?.totalWorkouts || 1, 1)) * 100)}%`}
+          subtitle={`${stats?.completedWorkouts || 0}/${stats?.totalWorkouts || 0} workouts`}
           icon={Trophy}
           color="success"
           onClick={() => navigate('/progress')}
@@ -80,7 +96,7 @@ const Home: React.FC = () => {
         />
         <StatCard
           title="Avg. RPE"
-          value={mockStats.averageRPE.toFixed(1)}
+          value={(stats?.averageRPE || 0).toFixed(1)}
           subtitle="effort level"
           icon={MessageCircle}
         />
@@ -90,7 +106,6 @@ const Home: React.FC = () => {
       <HabitTracker
         habits={habits}
         onToggleHabit={handleToggleHabit}
-        // MODIFIED: The onClick for the '+' button now navigates to the profile habits tab
         onAddHabit={() => navigate('/profile', { state: { openTab: 'habits' } })}
       />
 
