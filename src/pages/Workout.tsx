@@ -69,7 +69,7 @@ const Workout: React.FC = () => {
       // Update database if connected
       if (isConnected) {
         // RPE will be collected on the completion page
-        await dbCompleteWorkout(workout.id);
+        dbCompleteWorkout(workout.id).catch(console.error);
       }
       
       // Navigate to completion page

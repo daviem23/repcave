@@ -49,9 +49,8 @@ const WorkoutComplete: React.FC = () => {
       console.error('Error saving workout completion:', error);
     } finally {
       setSubmitting(false);
+      navigate('/');
     }
-    
-    navigate('/');
   };
 
   return (

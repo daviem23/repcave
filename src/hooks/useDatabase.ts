@@ -127,7 +127,6 @@ export function useHabits() {
       await loadHabits(); // Reload to get updated data
     } catch (err) {
       console.error('Error toggling habit:', err);
-      throw err;
     }
   };
 
