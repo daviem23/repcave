@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // ADDED: For navigation
 import { Flame, Trophy, Target, MessageCircle, ChevronRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import StatCard from '../components/StatCard';
 import HabitTracker from '../components/HabitTracker';
 import { useHabits, useUserStats, useDatabaseWithFallback } from '../hooks/useDatabase';
@@ -11,6 +12,7 @@ import { mockUser, mockHabits, mockStats } from '../lib/supabase';
 
 const Home: React.FC = () => {
   const navigate = useNavigate(); // ADDED: Initialize navigate function
+  const { user } = useAuth();
   const { isConnected } = useDatabaseWithFallback();
   
   // Use real data if connected, fallback to localStorage
@@ -59,7 +61,7 @@ const Home: React.FC = () => {
       {/* Welcome Header */}
       <div className="text-center py-6">
         <h1 className="text-2xl font-bold text-text-dark mb-2">
-          {getGreeting()}, {mockUser.name}! 👋
+          {getGreeting()}, {user?.user_metadata?.name || 'User'}! 👋
         </h1>
         <p className="text-text-light">
           Ready to crush today's workout?

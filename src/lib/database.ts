@@ -26,7 +26,14 @@ export async function getUserProfile(userId: string) {
     .eq('id', userId)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // If profile doesn't exist, create a default one
+    if (error.code === 'PGRST116') {
+      return await createUserProfile(userId, 'User');
+    }
+    throw error;
+  }
+
   return data;
 }
 

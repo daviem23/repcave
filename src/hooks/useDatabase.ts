@@ -1,24 +1,28 @@
 // Custom hooks for database operations
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useLocalStorage } from './useLocalStorage';
 import * as db from '../lib/database';
 import type { User, Habit, Workout, UserStats, FitnessProfile } from '../types';
 
-// Mock user ID for development (will be replaced with auth)
-const MOCK_USER_ID = 'mock-user-123';
-
 // ===== USER HOOKS =====
 
 export function useUser() {
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadUser() {
+      if (!authUser) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const userData = await db.getUserProfile(MOCK_USER_ID);
+        const userData = await db.getUserProfile(authUser.id);
         setUser(userData);
       } catch (err) {
         console.error('Error loading user:', err);
@@ -29,11 +33,15 @@ export function useUser() {
     }
 
     loadUser();
-  }, []);
+  }, [authUser]);
 
   const updateUser = async (updates: Partial<User>) => {
+    if (!authUser) {
+      throw new Error('User not authenticated');
+    }
+
     try {
-      const updatedUser = await db.updateUserProfile(MOCK_USER_ID, updates);
+      const updatedUser = await db.updateUserProfile(authUser.id, updates);
       setUser(updatedUser);
       return updatedUser;
     } catch (err) {
@@ -48,14 +56,20 @@ export function useUser() {
 // ===== FITNESS PROFILE HOOKS =====
 
 export function useFitnessProfile() {
+  const { user: authUser } = useAuth();
   const [profile, setProfile] = useState<FitnessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = async () => {
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const profileData = await db.getFitnessProfile(MOCK_USER_ID);
+      const profileData = await db.getFitnessProfile(authUser.id);
       setProfile(profileData);
     } catch (err) {
       console.error('Error loading fitness profile:', err);
@@ -67,11 +81,15 @@ export function useFitnessProfile() {
 
   useEffect(() => {
     loadProfile();
-  }, []);
+  }, [authUser]);
 
   const updateProfile = async (updates: Partial<FitnessProfile>) => {
+    if (!authUser) {
+      throw new Error('User not authenticated');
+    }
+
     try {
-      const updatedProfile = await db.updateFitnessProfile(MOCK_USER_ID, updates);
+      const updatedProfile = await db.updateFitnessProfile(authUser.id, updates);
       await loadProfile(); // Reload to get fresh data
       return updatedProfile;
     } catch (err) {
@@ -81,8 +99,12 @@ export function useFitnessProfile() {
   };
 
   const createProfile = async (profileData: Omit<FitnessProfile, 'id'>) => {
+    if (!authUser) {
+      throw new Error('User not authenticated');
+    }
+
     try {
-      const newProfile = await db.createFitnessProfile(MOCK_USER_ID, profileData);
+      const newProfile = await db.createFitnessProfile(authUser.id, profileData);
       await loadProfile(); // Reload to get fresh data
       return newProfile;
     } catch (err) {
@@ -103,20 +125,26 @@ export function useFitnessProfile() {
 // ===== HABIT HOOKS =====
 
 export function useHabits() {
+  const { user: authUser } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadHabits = async () => {
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const habitsData = await db.getUserHabits(MOCK_USER_ID);
+      const habitsData = await db.getUserHabits(authUser.id);
       
       // Transform database data to match our Habit interface
       const transformedHabits = await Promise.all(
         habitsData.map(async (habit) => {
           // Get recent completions to calculate streak and completion rate
-          const completions = await db.getHabitCompletions(MOCK_USER_ID, habit.id, 30);
+          const completions = await db.getHabitCompletions(authUser.id, habit.id, 30);
           const today = new Date().toISOString().split('T')[0];
           const isCompletedToday = completions.some(c => c.completed_date === today);
           
@@ -161,11 +189,15 @@ export function useHabits() {
 
   useEffect(() => {
     loadHabits();
-  }, []);
+  }, [authUser]);
 
   const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt'>) => {
+    if (!authUser) {
+      throw new Error('User not authenticated');
+    }
+
     try {
-      await db.createHabit(MOCK_USER_ID, habitData);
+      await db.createHabit(authUser.id, habitData);
       await loadHabits(); // Reload to get updated data
     } catch (err) {
       console.error('Error adding habit:', err);
@@ -174,11 +206,15 @@ export function useHabits() {
   };
 
   const toggleHabit = async (habitId: string) => {
+    if (!authUser) {
+      return;
+    }
+
     try {
       const habit = habits.find(h => h.id === habitId);
       if (!habit) return;
 
-      await db.toggleHabitCompletion(MOCK_USER_ID, habitId, !habit.completed);
+      await db.toggleHabitCompletion(authUser.id, habitId, !habit.completed);
       await loadHabits(); // Reload to get updated data
     } catch (err) {
       console.error('Error toggling habit:', err);
@@ -209,14 +245,20 @@ export function useHabits() {
 // ===== WORKOUT HOOKS =====
 
 export function useWorkouts() {
+  const { user: authUser } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadWorkouts = async () => {
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const workoutsData = await db.getUserWorkouts(MOCK_USER_ID);
+      const workoutsData = await db.getUserWorkouts(authUser.id);
       
       // Transform database data to match our Workout interface
       const transformedWorkouts = workoutsData.map((workout) => ({
@@ -250,7 +292,7 @@ export function useWorkouts() {
 
   useEffect(() => {
     loadWorkouts();
-  }, []);
+  }, [authUser]);
 
   const completeWorkout = async (workoutId: string, rpe?: number) => {
     try {
@@ -274,14 +316,20 @@ export function useWorkouts() {
 // ===== STATS HOOKS =====
 
 export function useUserStats() {
+  const { user: authUser } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadStats = async () => {
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const statsData = await db.getUserStats(MOCK_USER_ID);
+      const statsData = await db.getUserStats(authUser.id);
       setStats(statsData);
     } catch (err) {
       console.error('Error loading stats:', err);
@@ -293,7 +341,7 @@ export function useUserStats() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [authUser]);
 
   return {
     stats,

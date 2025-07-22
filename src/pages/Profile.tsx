@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Edit2, Plus, Trash2, CreditCard, Settings, LogOut, User, Target } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { useHabits, useUser, useFitnessProfile, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { mockUser, mockHabits, type Habit } from '../lib/supabase';
 
 const Profile: React.FC = () => {
   const location = useLocation();
+  const { signOut } = useAuth();
   const { isConnected } = useDatabaseWithFallback();
   
   // Use real data if connected, fallback to localStorage
@@ -95,6 +97,14 @@ const Profile: React.FC = () => {
   };
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
     { id: 'habits', label: 'Habits', icon: Target },
     { id: 'subscription', label: 'Subscription', icon: CreditCard },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -429,7 +439,10 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-      <button className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center justify-center space-x-2">
+      <button 
+        onClick={handleSignOut}
+        className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
+      >
         <LogOut size={20} />
         <span>Sign Out</span>
       </button>
