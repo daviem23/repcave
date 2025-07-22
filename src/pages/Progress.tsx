@@ -6,16 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
-import { useUserStats, useDatabaseWithFallback } from '../hooks/useDatabase';
-import { mockStats } from '../lib/supabase';
+import { useUserStats } from '../hooks/useDatabase';
 
 const Progress: React.FC = () => {
   const navigate = useNavigate();
-  const { isConnected } = useDatabaseWithFallback();
-  const { stats: dbStats, loading } = useUserStats();
-  
-  // Choose data source based on connection status
-  const stats = isConnected ? dbStats : mockStats;
+  const { stats, loading } = useUserStats();
 
   const rpeData = [
     { day: 'Mon', rpe: 6 },

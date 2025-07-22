@@ -4,26 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Edit2, Plus, Trash2, CreditCard, Settings, LogOut, User, Target } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useHabits, useUser, useFitnessProfile, useDatabaseWithFallback } from '../hooks/useDatabase';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { mockUser, mockHabits, type Habit } from '../lib/supabase';
+import { useHabits, useUser, useFitnessProfile } from '../hooks/useDatabase';
+import { type Habit } from '../lib/supabase';
 
 const Profile: React.FC = () => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { isConnected } = useDatabaseWithFallback();
   
-  // Use real data if connected, fallback to localStorage
-  const { user: dbUser, loading: userLoading } = useUser();
-  const { profile: dbProfile, loading: profileLoading, updateProfile } = useFitnessProfile();
-  const { habits: dbHabits, addHabit: dbAddHabit, deleteHabit: dbDeleteHabit, loading: habitsLoading } = useHabits();
-  const [localHabits, setLocalHabits] = useLocalStorage<Habit[]>('habits', mockHabits);
-  
-  // Choose data source based on connection status
-  const user = isConnected ? dbUser : mockUser;
-  const fitnessProfile = isConnected ? dbProfile : null;
-  const habits = isConnected ? dbHabits : localHabits;
-  const loading = isConnected ? (userLoading || profileLoading || habitsLoading) : false;
+  // Use real database data
+  const { user, updateUser, loading: userLoading } = useUser();
+  const { profile: fitnessProfile, loading: profileLoading, updateProfile } = useFitnessProfile();
+  const { habits, addHabit, deleteHabit, loading: habitsLoading } = useHabits();
+  const loading = userLoading || profileLoading || habitsLoading;
   
   const [activeTab, setActiveTab] = useState('profile');
   const [newHabitName, setNewHabitName] = useState('');
@@ -57,42 +49,24 @@ const Profile: React.FC = () => {
   }, [user]);
   const handleAddHabit = () => {
     if (newHabitName.trim()) {
-      if (isConnected) {
-        dbAddHabit({
-          name: newHabitName.trim(),
-          category: newHabitCategory,
-          completed: false,
-          streak: 0,
-          completionRate: 0
-        });
-      } else {
-        const newHabit: Habit = {
-          id: Date.now().toString(),
-          name: newHabitName.trim(),
-          category: newHabitCategory,
-          completed: false,
-          streak: 0,
-          completionRate: 0,
-          createdAt: new Date().toISOString(),
-        };
-        setLocalHabits(prev => [...prev, newHabit]);
-      }
+      addHabit({
+        name: newHabitName.trim(),
+        category: newHabitCategory,
+        completed: false,
+        streak: 0,
+        completionRate: 0
+      });
       setNewHabitName('');
       setNewHabitCategory('Health');
     }
   };
 
   const handleSaveProfile = async () => {
-    if (isConnected && updateUser) {
-      try {
-        await updateUser(profileForm);
-        setEditingProfile(false);
-      } catch (error) {
-        console.error('Failed to update profile:', error);
-      }
-    } else {
-      // Update localStorage for development
+    try {
+      await updateUser(profileForm);
       setEditingProfile(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
     }
   };
   const tabs = [
@@ -111,11 +85,7 @@ const Profile: React.FC = () => {
   ];
 
   const handleDeleteHabit = (habitId: string) => {
-    if (isConnected) {
-      dbDeleteHabit(habitId);
-    } else {
-      setLocalHabits(prev => prev.filter(habit => habit.id !== habitId));
-    }
+    deleteHabit(habitId);
   };
 
   const renderProfile = () => (

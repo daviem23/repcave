@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Trophy, Star, Home } from 'lucide-react';
 import { useWorkoutTimer } from '../hooks/useWorkoutTimer';
-import { useWorkouts, useDatabaseWithFallback } from '../hooks/useDatabase';
+import { useWorkouts } from '../hooks/useDatabase';
 
 const WorkoutComplete: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isConnected } = useDatabaseWithFallback();
   const { completeWorkout } = useWorkouts();
   const [rpe, setRpe] = useState(7);
   const [submitting, setSubmitting] = useState(false);
@@ -32,18 +31,8 @@ const WorkoutComplete: React.FC = () => {
     try {
       setSubmitting(true);
       
-      if (isConnected && workoutId) {
-        // Save to database
+      if (workoutId) {
         await completeWorkout(workoutId, rpe);
-      } else {
-        // Log for development
-        console.log('Workout completed:', { 
-          workoutId, 
-          rpe, 
-          completedAt: new Date().toISOString(),
-          totalExercises,
-          totalSets 
-        });
       }
     } catch (error) {
       console.error('Error saving workout completion:', error);

@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
-import { useWorkouts, useDatabaseWithFallback } from '../hooks/useDatabase';
-import { mockWorkouts } from '../lib/supabase';
+import { useWorkouts } from '../hooks/useDatabase';
 
 import WorkoutCard from '../components/WorkoutCard'; 
 
 const PlanTabs = () => {
   const [selectedWeek, setSelectedWeek] = useState(1);
   const navigate = useNavigate();
-  const { isConnected } = useDatabaseWithFallback();
-  const { workouts: dbWorkouts, loading } = useWorkouts();
-  
-  // Choose data source based on connection status
-  const allWorkouts = isConnected ? dbWorkouts : mockWorkouts;
+  const { workouts: allWorkouts, loading } = useWorkouts();
   const currentDay = 4;
 
   const workoutsForWeek = allWorkouts.filter(

@@ -1,7 +1,6 @@
 // Custom hooks for database operations
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLocalStorage } from './useLocalStorage';
 import * as db from '../lib/database';
 import type { User, Habit, Workout, UserStats, FitnessProfile } from '../types';
 
@@ -131,10 +130,7 @@ export function useHabits() {
   const [error, setError] = useState<string | null>(null);
 
   const loadHabits = async () => {
-    if (!authUser) {
-      setLoading(false);
-      return;
-    }
+    if (!authUser) return;
 
     try {
       setLoading(true);
@@ -192,9 +188,7 @@ export function useHabits() {
   }, [authUser]);
 
   const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt'>) => {
-    if (!authUser) {
-      throw new Error('User not authenticated');
-    }
+    if (!authUser) throw new Error('User not authenticated');
 
     try {
       await db.createHabit(authUser.id, habitData);
@@ -206,9 +200,7 @@ export function useHabits() {
   };
 
   const toggleHabit = async (habitId: string) => {
-    if (!authUser) {
-      return;
-    }
+    if (!authUser) return;
 
     try {
       const habit = habits.find(h => h.id === habitId);
@@ -251,10 +243,7 @@ export function useWorkouts() {
   const [error, setError] = useState<string | null>(null);
 
   const loadWorkouts = async () => {
-    if (!authUser) {
-      setLoading(false);
-      return;
-    }
+    if (!authUser) return;
 
     try {
       setLoading(true);
@@ -322,10 +311,7 @@ export function useUserStats() {
   const [error, setError] = useState<string | null>(null);
 
   const loadStats = async () => {
-    if (!authUser) {
-      setLoading(false);
-      return;
-    }
+    if (!authUser) return;
 
     try {
       setLoading(true);
@@ -349,26 +335,4 @@ export function useUserStats() {
     error,
     refetch: loadStats,
   };
-}
-
-// ===== FALLBACK HOOK FOR DEVELOPMENT =====
-
-// This hook provides a fallback to localStorage when Supabase is not connected
-export function useDatabaseWithFallback() {
-  const [isConnected, setIsConnected] = useState(false);
-
-  // Check if Supabase is properly configured
-  useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    setIsConnected(
-      supabaseUrl && 
-      supabaseKey && 
-      supabaseUrl !== 'https://placeholder.supabase.co' &&
-      supabaseKey !== 'placeholder-key'
-    );
-  }, []);
-
-  return { isConnected };
 }

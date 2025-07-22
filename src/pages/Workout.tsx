@@ -4,17 +4,12 @@ import { CheckCircle, ArrowRight } from 'lucide-react';
 import Header from '../components/Header';
 import WorkoutTimer from '../components/WorkoutTimer';
 import { useWorkoutTimer } from '../hooks/useWorkoutTimer';
-import { useWorkouts, useDatabaseWithFallback } from '../hooks/useDatabase';
-import { mockWorkouts } from '../lib/supabase';
+import { useWorkouts } from '../hooks/useDatabase';
 
 const Workout: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isConnected } = useDatabaseWithFallback();
-  const { workouts: dbWorkouts, completeWorkout: dbCompleteWorkout, loading } = useWorkouts();
-  
-  // Choose data source based on connection status
-  const allWorkouts = isConnected ? dbWorkouts : mockWorkouts;
+  const { workouts: allWorkouts, completeWorkout, loading } = useWorkouts();
   const [workout] = useState(allWorkouts.find(w => w.id === id));
   
   const [currentExercise, setCurrentExercise] = useState(0);
@@ -51,8 +46,8 @@ const Workout: React.FC = () => {
   }
 
   const handleStartWorkout = async () => {
-    // TODO: Start workout log when connected to database
-    // if (isConnected) await startWorkoutLog(userId, workout.id);
+    // TODO: Start workout log in database
+    // await startWorkoutLog(userId, workout.id);
     
     setWorkoutStarted(true);
     timer.startTimer();
@@ -66,11 +61,8 @@ const Workout: React.FC = () => {
       // Complete the workout
       timer.completeWorkout();
       
-      // Update database if connected
-      if (isConnected) {
-        // RPE will be collected on the completion page
-        dbCompleteWorkout(workout.id).catch(console.error);
-      }
+      // Update database - RPE will be collected on the completion page
+      completeWorkout(workout.id).catch(console.error);
       
       // Navigate to completion page
       navigate('/workout-complete', { 

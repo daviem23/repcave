@@ -1,46 +1,28 @@
 // src/pages/Home.tsx (Final Complete Version)
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // ADDED: For navigation
+import { useNavigate } from 'react-router-dom';
 import { Flame, Trophy, Target, MessageCircle, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import StatCard from '../components/StatCard';
 import HabitTracker from '../components/HabitTracker';
-import { useHabits, useUserStats, useDatabaseWithFallback } from '../hooks/useDatabase';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { mockUser, mockHabits, mockStats } from '../lib/supabase';
+import { useHabits, useUserStats } from '../hooks/useDatabase';
 
 const Home: React.FC = () => {
-  const navigate = useNavigate(); // ADDED: Initialize navigate function
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { isConnected } = useDatabaseWithFallback();
   
-  // Use real data if connected, fallback to localStorage
-  const { habits: dbHabits, toggleHabit: dbToggleHabit, loading: habitsLoading } = useHabits();
-  const { stats: dbStats, loading: statsLoading } = useUserStats();
-  const [localHabits, setLocalHabits] = useLocalStorage('habits', mockHabits);
-
-  // Choose data source based on connection status
-  const habits = isConnected ? dbHabits : localHabits;
-  const stats = isConnected ? dbStats : mockStats;
-  const loading = isConnected ? (habitsLoading || statsLoading) : false;
+  // Use real database data
+  const { habits, toggleHabit, loading: habitsLoading } = useHabits();
+  const { stats, loading: statsLoading } = useUserStats();
+  const loading = habitsLoading || statsLoading;
   
   const [currentTip] = useState(
     "Progressive overload is key! Gradually increase intensity, volume, or difficulty to keep challenging your muscles."
   );
 
   const handleToggleHabit = (habitId: string) => {
-    if (isConnected) {
-      dbToggleHabit(habitId);
-    } else {
-      setLocalHabits(prev => 
-        prev.map(habit => 
-          habit.id === habitId 
-            ? { ...habit, completed: !habit.completed, streak: !habit.completed ? habit.streak + 1 : Math.max(0, habit.streak - 1) }
-            : habit
-        )
-      );
-    }
+    toggleHabit(habitId);
   };
 
   const getGreeting = () => {

@@ -16,6 +16,14 @@ export async function createUserProfile(userId: string, name: string) {
     .single();
 
   if (error) throw error;
+  
+  // Also create user stats record
+  await supabase
+    .from('user_stats')
+    .insert({
+      user_id: userId,
+    });
+  
   return data;
 }
 
