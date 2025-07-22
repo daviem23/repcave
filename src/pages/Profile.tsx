@@ -154,7 +154,7 @@ const Profile: React.FC = () => {
                   type="text"
                   value={profileForm.height}
                   onChange={(e) => setProfileForm(prev => ({ ...prev, height: e.target.value }))}
-                  placeholder="e.g., 6'0\""
+                  placeholder="e.g., 6'0&quot;"
                   className="w-full p-2 border border-border-color rounded-lg"
                 />
               </div>
