@@ -7,7 +7,9 @@ export interface User {
 }
 
 export interface FitnessProfile {
+  id?: string;
   pushupLevel: '0-5' | '6-15' | '16-30' | '31+';
+  squatLevel: '0-5' | '6-15' | '16-30' | '31+';
   squatLevel: '0-5' | '6-15' | '16-30' | '31+';
   effortLevel: 'easy' | 'moderate' | 'tough' | 'limit';
   equipment: string[];

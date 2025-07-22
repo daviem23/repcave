@@ -50,6 +50,7 @@ export async function createFitnessProfile(userId: string, profile: Omit<Fitness
     .insert({
       user_id: userId,
       pushup_level: profile.pushupLevel,
+      squat_level: profile.squatLevel,
       effort_level: profile.effortLevel,
       equipment: profile.equipment,
       workout_duration: profile.workoutDuration,
@@ -70,13 +71,32 @@ export async function getFitnessProfile(userId: string) {
     .single();
 
   if (error) throw error;
-  return data;
+  
+  // Transform database data to match our interface
+  return {
+    id: data.id,
+    pushupLevel: data.pushup_level,
+    squatLevel: data.squat_level,
+    effortLevel: data.effort_level,
+    equipment: data.equipment,
+    workoutDuration: data.workout_duration,
+    goals: data.goals,
+  };
 }
 
 export async function updateFitnessProfile(userId: string, updates: Partial<FitnessProfile>) {
+  const dbUpdates: any = {};
+  
+  if (updates.pushupLevel) dbUpdates.pushup_level = updates.pushupLevel;
+  if (updates.squatLevel) dbUpdates.squat_level = updates.squatLevel;
+  if (updates.effortLevel) dbUpdates.effort_level = updates.effortLevel;
+  if (updates.equipment) dbUpdates.equipment = updates.equipment;
+  if (updates.workoutDuration) dbUpdates.workout_duration = updates.workoutDuration;
+  if (updates.goals) dbUpdates.goals = updates.goals;
+
   const { data, error } = await supabase
     .from('fitness_profiles')
-    .update(updates)
+    .update(dbUpdates)
     .eq('user_id', userId)
     .select()
     .single();

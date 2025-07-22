@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Edit2, Plus, Trash2, CreditCard, Settings, LogOut, User, Target } from 'lucide-react';
-import { useHabits, useUser, useDatabaseWithFallback } from '../hooks/useDatabase';
+import { useHabits, useUser, useFitnessProfile, useDatabaseWithFallback } from '../hooks/useDatabase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { mockUser, mockHabits, type Habit } from '../lib/supabase';
 
@@ -13,19 +13,29 @@ const Profile: React.FC = () => {
   
   // Use real data if connected, fallback to localStorage
   const { user: dbUser, loading: userLoading } = useUser();
+  const { profile: dbProfile, loading: profileLoading, updateProfile } = useFitnessProfile();
   const { habits: dbHabits, addHabit: dbAddHabit, deleteHabit: dbDeleteHabit, loading: habitsLoading } = useHabits();
   const [localHabits, setLocalHabits] = useLocalStorage<Habit[]>('habits', mockHabits);
   
   // Choose data source based on connection status
   const user = isConnected ? dbUser : mockUser;
+  const fitnessProfile = isConnected ? dbProfile : null;
   const habits = isConnected ? dbHabits : localHabits;
-  const loading = isConnected ? (userLoading || habitsLoading) : false;
+  const loading = isConnected ? (userLoading || profileLoading || habitsLoading) : false;
   
   const [activeTab, setActiveTab] = useState('profile');
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitCategory, setNewHabitCategory] = useState<'Health' | 'Recovery' | 'Cardio' | 'Mental' | 'Nutrition'>('Health');
   const [unitPreference, setUnitPreference] = useState('imperial');
   const [timerPreference, setTimerPreference] = useState('auto');
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editingFitness, setEditingFitness] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    age: user?.age || 0,
+    weight: user?.weight || 0,
+    height: user?.height || '',
+  });
 
   useEffect(() => {
     if (location.state?.openTab) {
@@ -33,6 +43,16 @@ const Profile: React.FC = () => {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name,
+        age: user.age,
+        weight: user.weight,
+        height: user.height,
+      });
+    }
+  }, [user]);
   const handleAddHabit = () => {
     if (newHabitName.trim()) {
       if (isConnected) {
@@ -60,6 +80,19 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleSaveProfile = async () => {
+    if (isConnected && updateUser) {
+      try {
+        await updateUser(profileForm);
+        setEditingProfile(false);
+      } catch (error) {
+        console.error('Failed to update profile:', error);
+      }
+    } else {
+      // Update localStorage for development
+      setEditingProfile(false);
+    }
+  };
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'habits', label: 'Habits', icon: Target },
@@ -81,10 +114,67 @@ const Profile: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-dark-text">Personal Information</h3>
           <button className="text-primary hover:text-primary-dark">
+            onClick={() => setEditingProfile(!editingProfile)}
             <Edit2 size={20} />
           </button>
         </div>
         <div className="space-y-3">
+          {editingProfile ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-light-text mb-1">Name</label>
+                <input
+                  type="text"
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-2 border border-border-color rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-light-text mb-1">Age</label>
+                <input
+                  type="number"
+                  value={profileForm.age}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
+                  className="w-full p-2 border border-border-color rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-light-text mb-1">Weight (lbs)</label>
+                <input
+                  type="number"
+                  value={profileForm.weight}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, weight: parseInt(e.target.value) || 0 }))}
+                  className="w-full p-2 border border-border-color rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-light-text mb-1">Height</label>
+                <input
+                  type="text"
+                  value={profileForm.height}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, height: e.target.value }))}
+                  placeholder="e.g., 6'0\""
+                  className="w-full p-2 border border-border-color rounded-lg"
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleSaveProfile}
+                  className="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditingProfile(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="flex justify-between">
             <span className="text-light-text">Name</span>
             <span className="text-dark-text font-medium">{user?.name}</span>
@@ -101,6 +191,8 @@ const Profile: React.FC = () => {
             <span className="text-light-text">Height</span>
             <span className="text-dark-text font-medium">{user?.height}</span>
           </div>
+            </>
+          )}
         </div>
       </div>
       <div className="bg-light-bg rounded-xl p-6 border border-border-color">
@@ -119,6 +211,42 @@ const Profile: React.FC = () => {
               </span>
             </div>
           </div>
+          {fitnessProfile && (
+            <>
+              <div>
+                <span className="text-light-text text-sm">Push-up Level</span>
+                <div className="mt-1">
+                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {fitnessProfile.pushupLevel}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-light-text text-sm">Squat Level</span>
+                <div className="mt-1">
+                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {fitnessProfile.squatLevel}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-light-text text-sm">Effort Level</span>
+                <div className="mt-1">
+                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                    {fitnessProfile.effortLevel}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-light-text text-sm">Workout Duration</span>
+                <div className="mt-1">
+                  <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
+                    {fitnessProfile.workoutDuration} minutes
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
           <div>
             <span className="text-light-text text-sm">Goals</span>
             <div className="mt-1 space-x-2">

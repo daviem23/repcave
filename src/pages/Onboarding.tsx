@@ -98,6 +98,19 @@ const Onboarding: React.FC = () => {
     } else {
       // Generate plan
       console.log('Generating plan with:', formData);
+      
+      // TODO: Save fitness profile to database when connected
+      // if (isConnected) {
+      //   createFitnessProfile({
+      //     pushupLevel: formData.pushupLevel,
+      //     squatLevel: formData.squatLevel,
+      //     effortLevel: formData.effortLevel,
+      //     equipment: formData.equipment,
+      //     workoutDuration: formData.workoutDuration,
+      //     goals: ['Build Muscle', 'Stay Consistent'], // Default goals
+      //   });
+      // }
+      
       navigate('/plan');
     }
   };

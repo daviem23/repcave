@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import * as db from '../lib/database';
-import type { User, Habit, Workout, UserStats } from '../types';
+import type { User, Habit, Workout, UserStats, FitnessProfile } from '../types';
 
 // Mock user ID for development (will be replaced with auth)
 const MOCK_USER_ID = 'mock-user-123';
@@ -45,6 +45,61 @@ export function useUser() {
   return { user, loading, error, updateUser };
 }
 
+// ===== FITNESS PROFILE HOOKS =====
+
+export function useFitnessProfile() {
+  const [profile, setProfile] = useState<FitnessProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const profileData = await db.getFitnessProfile(MOCK_USER_ID);
+      setProfile(profileData);
+    } catch (err) {
+      console.error('Error loading fitness profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load fitness profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const updateProfile = async (updates: Partial<FitnessProfile>) => {
+    try {
+      const updatedProfile = await db.updateFitnessProfile(MOCK_USER_ID, updates);
+      await loadProfile(); // Reload to get fresh data
+      return updatedProfile;
+    } catch (err) {
+      console.error('Error updating fitness profile:', err);
+      throw err;
+    }
+  };
+
+  const createProfile = async (profileData: Omit<FitnessProfile, 'id'>) => {
+    try {
+      const newProfile = await db.createFitnessProfile(MOCK_USER_ID, profileData);
+      await loadProfile(); // Reload to get fresh data
+      return newProfile;
+    } catch (err) {
+      console.error('Error creating fitness profile:', err);
+      throw err;
+    }
+  };
+
+  return {
+    profile,
+    loading,
+    error,
+    updateProfile,
+    createProfile,
+    refetch: loadProfile,
+  };
+}
 // ===== HABIT HOOKS =====
 
 export function useHabits() {

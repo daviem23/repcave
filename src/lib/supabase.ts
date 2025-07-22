@@ -14,7 +14,7 @@ export interface User {
   name: string;
   email: string;
   createdAt: string;
-  subscriptionStatus: 'active' | 'inactive';
+  subscriptionStatus: 'active' | 'inactive' | 'trial';
   // Properties required by the new v2.1 component:
   age: number;
   weight: number;
