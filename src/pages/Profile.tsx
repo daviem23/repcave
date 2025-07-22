@@ -113,8 +113,8 @@ const Profile: React.FC = () => {
       <div className="bg-light-bg rounded-xl p-6 border border-border-color">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-dark-text">Personal Information</h3>
-          <button className="text-primary hover:text-primary-dark">
-            onClick={() => setEditingProfile(!editingProfile)}
+          <button className="text-primary hover:text-primary-dark"
+            onClick={() => setEditingProfile(!editingProfile)}>
             <Edit2 size={20} />
           </button>
         </div>
@@ -478,7 +478,3 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-    )
-    }
-  )
-}
