@@ -4,6 +4,8 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFitnessProfile } from '../hooks/useDatabase';
 import Header from '../components/Header';
+import { generateWorkoutPlan } from '../lib/workoutGenerator';
+import { createWorkoutPlan, deleteExistingWorkoutPlan } from '../lib/database';
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -97,21 +99,38 @@ const Onboarding: React.FC = () => {
       // Generate plan
       console.log('Generating plan with:', formData);
       
-      // Save fitness profile to database
       try {
-        await createProfile({
+        if (!user) throw new Error('User not authenticated');
+
+        // Create fitness profile data
+        const fitnessProfileData = {
           pushupLevel: formData.pushupLevel as '0-5' | '6-15' | '16-30' | '31+',
           squatLevel: formData.squatLevel as '0-5' | '6-15' | '16-30' | '31+',
           effortLevel: mapEffortLevel(formData.effortLevel),
           equipment: formData.equipment,
           workoutDuration: mapWorkoutDuration(formData.workoutDuration),
           goals: ['Build Muscle', 'Stay Consistent'], // Default goals
-        });
+        };
+
+        // Save fitness profile to database
+        await createProfile(fitnessProfileData);
         
-        console.log('Fitness profile saved successfully');
+        // Generate workout plan
+        const workouts = generateWorkoutPlan(fitnessProfileData);
+        
+        // Delete existing workout plan if regenerating
+        if (isRegenerate) {
+          await deleteExistingWorkoutPlan(user.id);
+        }
+        
+        // Save workout plan to database
+        await createWorkoutPlan(user.id, workouts);
+        
+        console.log('Fitness profile and workout plan saved successfully');
       } catch (error) {
-        console.error('Error saving fitness profile:', error);
-        // Continue to plan even if profile save fails
+        console.error('Error saving fitness profile and workout plan:', error);
+        // Show error to user but still navigate to plan
+        alert('There was an error generating your workout plan. Please try again.');
       }
       
       navigate('/plan');

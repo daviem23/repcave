@@ -399,3 +399,89 @@ export async function getExercise(exerciseId: string) {
   if (error) throw error;
   return data;
 }
+
+// ===== WORKOUT PLAN GENERATION =====
+
+export async function createWorkoutPlan(userId: string, workouts: any[]) {
+  // First, create a workout plan record
+  const { data: workoutPlan, error: planError } = await supabase
+    .from('workout_plans')
+    .insert({
+      user_id: userId,
+      fitness_profile_id: (await getFitnessProfile(userId))?.id,
+    })
+    .select()
+    .single();
+
+  if (planError) throw planError;
+
+  // Create all workouts
+  const workoutInserts = workouts.map(workout => ({
+    workout_plan_id: workoutPlan.id,
+    user_id: userId,
+    week_number: workout.week,
+    day_number: workout.day,
+    title: workout.title,
+    duration_minutes: workout.duration,
+    is_rest_day: workout.exercises.length === 0,
+  }));
+
+  const { data: createdWorkouts, error: workoutsError } = await supabase
+    .from('workouts')
+    .insert(workoutInserts)
+    .select();
+
+  if (workoutsError) throw workoutsError;
+
+  // Create exercises for each workout
+  for (let i = 0; i < workouts.length; i++) {
+    const workout = workouts[i];
+    const createdWorkout = createdWorkouts[i];
+
+    if (workout.exercises.length > 0) {
+      // First, ensure exercises exist in the exercises table
+      for (const exercise of workout.exercises) {
+        const { error: exerciseError } = await supabase
+          .from('exercises')
+          .upsert({
+            id: exercise.id,
+            name: exercise.name,
+            description: exercise.description,
+            equipment_required: [exercise.equipment],
+            muscle_groups: ['general'],
+            difficulty_level: 1,
+          }, { onConflict: 'id' });
+
+        if (exerciseError) console.warn('Exercise upsert warning:', exerciseError);
+      }
+
+      // Then create workout_exercises relationships
+      const exerciseInserts = workout.exercises.map((exercise: any, index: number) => ({
+        workout_id: createdWorkout.id,
+        exercise_id: exercise.id,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        duration_seconds: exercise.duration,
+        order_index: index,
+      }));
+
+      const { error: exerciseRelError } = await supabase
+        .from('workout_exercises')
+        .insert(exerciseInserts);
+
+      if (exerciseRelError) throw exerciseRelError;
+    }
+  }
+
+  return workoutPlan;
+}
+
+export async function deleteExistingWorkoutPlan(userId: string) {
+  // Delete existing workout plan and all related data
+  const { error } = await supabase
+    .from('workout_plans')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
