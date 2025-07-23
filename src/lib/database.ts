@@ -35,9 +35,8 @@ export async function getUserProfile(userId: string) {
     .single();
 
   if (error) {
-    // If profile doesn't exist, create a default one
     if (error.code === 'PGRST116') {
-      return await createUserProfile(userId, 'User');
+      return null;
     }
     throw error;
   }

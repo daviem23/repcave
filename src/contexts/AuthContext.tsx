@@ -43,16 +43,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-
-      // Create user profile on signup
-      if (event === 'SIGNED_UP' && session?.user) {
-        try {
-          const name = session.user.user_metadata?.name || 'User';
-          await createUserProfile(session.user.id, name);
-        } catch (error) {
-          console.error('Error creating user profile:', error);
-        }
-      }
     });
 
     return () => subscription.unsubscribe();

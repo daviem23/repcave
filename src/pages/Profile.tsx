@@ -85,6 +85,11 @@ const Profile: React.FC = () => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+    { id: 'habits', label: 'Habits', icon: Target },
+    { id: 'subscription', label: 'Subscription', icon: CreditCard },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ];
+
   const handleDeleteHabit = (habitId: string) => {
     deleteHabit(habitId);
   };
@@ -231,21 +236,21 @@ const Profile: React.FC = () => {
           <div>
             <span className="text-light-text text-sm">Goals</span>
             <div className="mt-1 space-x-2">
-              {user?.goals.map((goal, index) => (
+              {user?.goals?.map((goal, index) => (
                 <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
                   {goal}
                 </span>
-              ))}
+              )) || <span className="text-light-text text-sm">No goals set</span>}
             </div>
           </div>
           <div>
             <span className="text-light-text text-sm">Equipment</span>
             <div className="mt-1 space-x-2">
-              {user?.equipment.map((item, index) => (
+              {user?.equipment?.map((item, index) => (
                 <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                   {item}
                 </span>
-              ))}
+              )) || <span className="text-light-text text-sm">No equipment set</span>}
             </div>
           </div>
         </div>

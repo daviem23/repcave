@@ -22,7 +22,14 @@ export function useUser() {
       try {
         setLoading(true);
         const userData = await db.getUserProfile(authUser.id);
+        
+        // If no profile exists, create one
+        if (!userData && authUser) {
+          const newUser = await db.createUserProfile(authUser.id, authUser.user_metadata?.name || 'User');
+          setUser(newUser);
+        } else {
         setUser(userData);
+        }
       } catch (err) {
         console.error('Error loading user:', err);
         setError(err instanceof Error ? err.message : 'Failed to load user');
