@@ -69,8 +69,7 @@ const Profile: React.FC = () => {
       console.error('Failed to update profile:', error);
     }
   };
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -79,6 +78,8 @@ const Profile: React.FC = () => {
     }
   };
 
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
     { id: 'habits', label: 'Habits', icon: Target },
     { id: 'subscription', label: 'Subscription', icon: CreditCard },
     { id: 'settings', label: 'Settings', icon: Settings },
