@@ -82,14 +82,11 @@ export async function getFitnessProfile(userId: string) {
     .from('fitness_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
-    throw error;
-  }
+  if (error) throw error;
+  
+  if (!data) return null;
   
   // Transform database data to match our interface
   return {
