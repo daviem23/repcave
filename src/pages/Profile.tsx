@@ -85,11 +85,6 @@ const Profile: React.FC = () => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-    { id: 'habits', label: 'Habits', icon: Target },
-    { id: 'subscription', label: 'Subscription', icon: CreditCard },
-    { id: 'settings', label: 'Settings', icon: Settings },
-  ];
-
   const handleDeleteHabit = (habitId: string) => {
     deleteHabit(habitId);
   };
