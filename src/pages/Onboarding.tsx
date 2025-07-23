@@ -26,13 +26,13 @@ const Onboarding: React.FC = () => {
       title: 'How many push-ups can you do?',
       type: 'single',
       key: 'pushupLevel',
-      options: ['0–5', '6–15', '16–30', '31+'],
+      options: ['0-5', '6-15', '16-30', '31+'],
     },
     {
       title: 'How many squats can you do?',
       type: 'single',
       key: 'squatLevel',
-      options: ['0–5', '6–15', '16–30', '31+'],
+      options: ['0-5', '6-15', '16-30', '31+'],
     },
     {
       title: 'How do you feel after ten push-ups and ten squats?',
