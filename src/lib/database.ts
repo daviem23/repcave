@@ -84,7 +84,12 @@ export async function getFitnessProfile(userId: string) {
     .eq('user_id', userId)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
+  }
   
   // Transform database data to match our interface
   return {
